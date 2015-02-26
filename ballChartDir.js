@@ -60,7 +60,7 @@ app.directive('ballChart', function($parse, $window, $log) {
         if (newVal != oldVal) {
           ballDataToPlot = newVal;
           redrawBallChart();
-          traceBall()
+          //traceBall()
         }
       })
 
