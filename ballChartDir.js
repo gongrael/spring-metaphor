@@ -37,7 +37,8 @@ app.directive('ballChart', function($parse, $window, $log) {
         x: 133 + ballDataToPlot,
         y: 360 - (50 - ballDataToPlot) * (50 - ballDataToPlot) / 4
       }]
-      $log.log(dataSet);
+
+      //$log.log(dataSet);
 
       // defines the function that will be used to make the path.      
       var lineFunc = d3.svg.line()
@@ -47,7 +48,7 @@ app.directive('ballChart', function($parse, $window, $log) {
         .y(function(d) {
           return d.y;
         })
-        .interpolate('basis');
+        .interpolate('basis'); //basis to make it a curved line.
 
 
       //$watchCollection for changes in a collection of variables (ie. matrices or objects), if there are any changes 
@@ -72,12 +73,11 @@ app.directive('ballChart', function($parse, $window, $log) {
       
       function traceBall() {
         if (Math.abs(dataSet[dataSet.length-1].x - (133 + ballDataToPlot)) < 7) {
-          if (dataSet.length < 20000) {
+          if (dataSet.length < 10000) {
             dataSet.push({
               x: 133 + ballDataToPlot,
               y: 360 - (50 - ballDataToPlot) * (50 - ballDataToPlot) / 4
             });
-            $log.log(dataSet);
           }
         }
       }
@@ -174,6 +174,7 @@ app.directive('ballChart', function($parse, $window, $log) {
         //setChartParameters();
         // svg.selectAll("g.y.axis").call(yAxisGen);
         // svg.selectAll("g.x.axis").call(xAxisGen);
+        
         //selects all objects with the class solid, only one ball has that class in this case. 
         svg.selectAll(".solid")
           .attr({
@@ -181,8 +182,10 @@ app.directive('ballChart', function($parse, $window, $log) {
             cy: 360 - (50 - ballDataToPlot) * (50 - ballDataToPlot) / 4,
           });
 
+        if (dataSet.length < 10000) {
         svg.select(".forTrace path")
           .attr("d", lineFunc(dataSet));
+        }
       }
 
       drawBallChart();

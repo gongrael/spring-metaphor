@@ -61,41 +61,6 @@ app.directive('spring', function($parse, $log) {
       // using window.onload calls two instances of THREE, which cause the camera to break.
       initScene();
 
-      //watch for changes in the variable, if there is a newValue obetained, run loadSphere. 
-      // To keep things nice and simple, we are just going to look at ballData, which is the equivalent to 
-      // ballX.value.
-      // Also need to watch the parent scope, and not the childScope. ie. scope.$parent.$watch is required. 
-      // scope.$parent.$watch(exp, function(newValue, oldValue) {
-      //   if (newValue != oldValue) {
-      //     //$log.log(newValue);
-      //     //this will add a new sphere and remove the old one. 
-      //     loadSphere(newValue);
-      //   }
-      // });
-
-
-      //this function will create a new sphere. This sphere will be placed onto the screen
-      //and the old sphere will be removed. Causing simple motion.
-      //Will no longer use this function to initialize the sphere, going to draw it directly. 
-      // function loadSphere(value) {
-      //   sphere = new THREE.Mesh(
-      //     new THREE.SphereGeometry(
-      //       5,
-      //       50,
-      //       50),
-      //     material);
-      //   sphere.name = "sphere";
-      //   sphere.position.x = value - 30;
-      //   //sphere.position.x = value;
-      //   //assimpjson.updateMatrix();
-      //   if (previous) scene.remove(previous);
-      //   scene.add(sphere);
-      //   previous = sphere;
-      //   objects[1] = sphere;
-      // }
-
-      //load the sphere into the scene using the original position determined by the model. Given the controls, this is no longer done. 
-      //loadSphere(ballData);
 
       // call the animate function. This was copied from the fuckingdevelopers demo on angular and Three.JS
       animate();
@@ -140,42 +105,7 @@ app.directive('spring', function($parse, $log) {
         camera.position.z = 100;
         scene.add(camera);
 
-        //material for the balls
-        // material = new THREE.MeshPhongMaterial({
-        //   ambient: 0x33c4bf,
-        //   color: 0x5db8b8,
-        //   specular: 0x1bffe1,
-        //   shininess: 35
-        // })
-
-        //set up the first sphere
-        // sphere1 = new THREE.Mesh(
-        //   new THREE.SphereGeometry(
-        //     20,
-        //     50,
-        //     50),
-        //   material);
-        // sphere1.name = "sphere1";
-        // sphere1.position.x = -80;
-        // scene.add(sphere1);
-
-        // need to add the sphere to this object matrix. Need to have a list of objects in order for the raycaster to find them.
-        // dont add the sphere 1 to the object, dont want to change it.
-        //objects.push(sphere1);
-
-        //set up the second sphere
-        // sphere = new THREE.Mesh(
-        //   new THREE.SphereGeometry(
-        //     20,
-        //     50,
-        //     50),
-        //   material);
-        // sphere.name = "sphere";
-        // sphere.position.x = ballData - 20;
-
-        // scene.add(sphere)
-        // objects.push(sphere);
-
+       
         ///add a plane to the scene to make sure mouse controls work. Will need to look into how this works exactly. 
         plane = new THREE.Mesh(
           new THREE.PlaneBufferGeometry(500, 500),
@@ -201,6 +131,7 @@ app.directive('spring', function($parse, $log) {
         renderer.domElement.addEventListener('mousedown', onDocumentMouseDown, false);
         renderer.domElement.addEventListener('mouseup', onDocumentMouseUp, false);
 
+        //might wanna add the eventListener soon.
         //window.addEventListener( 'resize', onWindowResize, false );
       }
 
@@ -229,17 +160,7 @@ app.directive('spring', function($parse, $log) {
         return degree * (Math.PI / 180);
       };
 
-      // aids to make sure that the balls remain proportionate, and adjust the size of the 3D
-      // assets.
 
-      //     function onWindowResize() {
-
-      // 		camera.aspect = window.innerWidth / window.innerHeight;
-      // 		camera.updateProjectionMatrix();
-
-      // 		renderer.setSize( window.innerWidth , window.innerHeight);
-
-      // 	}
 
       //The below functions are for the movement of the balls. Have to adjust the mouse x and y to 
       //correspond to the current position of the mouse. 
@@ -272,8 +193,7 @@ app.directive('spring', function($parse, $log) {
           if (intersects[0].point.x > 11 && intersects[0].point.x < 92) {
 
             //SELECTED.position.x = intersects[0].point.x - 20;
-            
-            
+                        
             spring.morphTargetInfluences[0] = currentMouse;
             spring.morphTargetInfluences[1] = 1 - currentMouse;
             
@@ -284,10 +204,9 @@ app.directive('spring', function($parse, $log) {
             scope.$apply(function() {
               exp.assign(scope.$parent, intersects[0].point.x);
             });
+           }
 
-          }
-
-          return;
+          //return;
         }
 
         var intersects = raycaster.intersectObjects(objects);
