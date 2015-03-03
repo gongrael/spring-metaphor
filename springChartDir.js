@@ -1,4 +1,4 @@
-app.directive('ballChart', function($parse, $window, $log) {
+app.directive('springChart', function($parse, $window, $log) {
   return {
     restrict: 'EA',
     //replace: true,
@@ -40,6 +40,8 @@ app.directive('ballChart', function($parse, $window, $log) {
         y: 360 - (50 - ballDataToPlot) * (50 - ballDataToPlot) / 4
       }]
 
+      //determines the max and minumum value in the dataset.
+
       var maxAndMin = maxOrMin(dataSet);
 
       // defines the function that will be used to make the path.      
@@ -55,21 +57,16 @@ app.directive('ballChart', function($parse, $window, $log) {
       // This function checks the value of the number, compares it to a global max and min, and resets the global variables minX and maxX.
       function maxOrMin (dataArray) {
           var maxX = dataArray[0].x;      
+          var minX = dataArray[0].x;
 
           for (var i = 0; i < dataArray.length ; i++) {
             if (dataArray[i].x >= maxX) {
               maxX = Math.round(dataArray[i].x);
             }
-          }
-
-          var minX = dataArray[0].x;
-
-          for (var j = 0; j < dataArray.length ; j++) {
-            if (dataArray[j].x <= minX) {
-              minX = Math.round(dataArray[j].x);
+            if (dataArray[i].x <= minX) {
+              minX = Math.round(dataArray[i].x);
             }
           }
-          
           var maxAndMin = {"max": maxX, "min": minX};
           return maxAndMin; 
         }          
@@ -83,7 +80,7 @@ app.directive('ballChart', function($parse, $window, $log) {
         if (newVal != oldVal) {
           oldValue = oldVal;
 
-          ballDataToPlot = newVal; console.log(oldValue - ballDataToPlot);
+          ballDataToPlot = newVal;
           traceBall();
           redrawBallChart(); 
           maxAndMin = maxOrMin(dataSet);
