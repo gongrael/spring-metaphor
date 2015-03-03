@@ -13,6 +13,8 @@ app.directive('ballChart', function($parse, $window, $log) {
       //defining some variables
       var padding = 20;
       var xScale, yScale, xAxisGen, yAxisGen;
+      var newPoint = false; //this is for controlling when a new ball is drawn. 
+      var oldValue = "";
 
 
       //parses all the data found in the attribute ball-data, in this case it will grab the data represeted by ballX. 
@@ -38,7 +40,7 @@ app.directive('ballChart', function($parse, $window, $log) {
         y: 360 - (50 - ballDataToPlot) * (50 - ballDataToPlot) / 4
       }]
 
-      //$log.log(dataSet);
+      var maxAndMin = maxOrMin(dataSet);
 
       // defines the function that will be used to make the path.      
       var lineFunc = d3.svg.line()
@@ -50,7 +52,28 @@ app.directive('ballChart', function($parse, $window, $log) {
         })
         .interpolate('basis'); //basis to make it a curved line.
 
+      // This function checks the value of the number, compares it to a global max and min, and resets the global variables minX and maxX.
+      function maxOrMin (dataArray) {
+          var maxX = dataArray[0].x;      
 
+          for (var i = 0; i < dataArray.length ; i++) {
+            if (dataArray[i].x >= maxX) {
+              maxX = Math.round(dataArray[i].x);
+            }
+          }
+
+          var minX = dataArray[0].x;
+
+          for (var j = 0; j < dataArray.length ; j++) {
+            if (dataArray[j].x <= minX) {
+              minX = Math.round(dataArray[j].x);
+            }
+          }
+          
+          var maxAndMin = {"max": maxX, "min": minX};
+          return maxAndMin; 
+        }          
+      
       //$watchCollection for changes in a collection of variables (ie. matrices or objects), if there are any changes 
       //a newValue is obtained, we then set the newValue of ballDataToPlot. 
       // use exp, which is the parsed version of attrs.ballData.
@@ -58,31 +81,47 @@ app.directive('ballChart', function($parse, $window, $log) {
       // traceball() is also called, it places a new ball onto the chart. 
       scope.$watch(exp, function(newVal, oldVal) {
         if (newVal != oldVal) {
-          ballDataToPlot = newVal;
-          redrawBallChart();
-          //traceBall()
-        }
+          oldValue = oldVal;
+
+          ballDataToPlot = newVal; console.log(oldValue - ballDataToPlot);
+          traceBall();
+          redrawBallChart(); 
+          maxAndMin = maxOrMin(dataSet);
+         }
       })
 
       // trace ball is way of leaving a trace for the movement of the ball, highlighting the
-      // resulting graph. The trace now relies on a data set, which is updated whenever the ball moves.
-      // the line and a resulting path is used to draw the new trace.
-      // the if statements are in place to prevent noise in the graph by rapid movement of the balls
-      // also, to stop the writing of new data points once the trace is completed. 
+      // resulting graph. New data is only added to the data set when the ball moves out the max and min range.
+      // A sorting operation is needed to make sure the graph is connected properly. 
       
-      
-      function traceBall() {
-        if (Math.abs(dataSet[dataSet.length-1].x - (133 + ballDataToPlot)) < 7) {
-          if (dataSet.length < 10000) {
+       function traceBall() {
+          if (ballDataToPlot+133 < maxAndMin.min) {
+            newPoint = true;
             dataSet.push({
               x: 133 + ballDataToPlot,
               y: 360 - (50 - ballDataToPlot) * (50 - ballDataToPlot) / 4
             });
           }
-        }
+          else if (Math.round(ballDataToPlot+133) > maxAndMin.max) {
+            newPoint = true;
+            dataSet.push({
+              x: 133 + ballDataToPlot,
+              y: 360 - (50 - ballDataToPlot) * (50 - ballDataToPlot) / 4
+            });
+          }
+          // use the array sort method in conjunction with a simple function, that points the sorter to the object property.
+          dataSet.sort(compare);        
       }
 
 
+      //this is a function that sorts the data. specific to an array with objects that have the property x.  
+      function compare(a,b) {
+        if (a.x < b.x)
+           return -1;
+        if (a.x > b.x)
+          return 1;
+        return 0;
+      }
 
       // This sets the scaling for the entire graph. Adjusting these values will properly align the axis
       // need to be careful when manipulating these values. Best thing is to make it as responsive as possible
@@ -182,9 +221,10 @@ app.directive('ballChart', function($parse, $window, $log) {
             cy: 360 - (50 - ballDataToPlot) * (50 - ballDataToPlot) / 4,
           });
 
-        if (dataSet.length < 10000) {
+        if (newPoint) {
         svg.select(".forTrace path")
           .attr("d", lineFunc(dataSet));
+        newPoint = false;
         }
       }
 
