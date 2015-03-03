@@ -96,13 +96,15 @@ app.directive('spring', function($parse, $log) {
         scene.add(lights[3]);
 
 
-        camera = new THREE.PerspectiveCamera(
-          45,
-          width / height,
-          1,
-          1000
+        camera = new THREE.OrthographicCamera(
+        width / -2,
+        width / 2,
+        height / 2,
+        height / -2,
+        1,
+        1000
         );
-        camera.position.z = 100;
+        camera.position.z = 300;
         scene.add(camera);
 
        
@@ -122,7 +124,7 @@ app.directive('spring', function($parse, $log) {
         // the spring was animated used shape keys, and a very simple material was added.
 
         var jsonLoader = new THREE.JSONLoader();
-        jsonLoader.load("springAni.js", addModelToScene);
+        jsonLoader.load("springAni.json", addModelToScene);
         // addModelToScene function is called back after model has loaded
 
 
@@ -148,7 +150,7 @@ app.directive('spring', function($parse, $log) {
         spring = new THREE.Mesh(geometry, material);
         spring.scale.set(11, 11, 11);
         spring.rotation.z = (convert(-90))
-        spring.position.x = -70;
+        spring.position.x = 0;
         scene.add(spring);
 
         //push in the spring to objects so you can detect when its selected
@@ -186,18 +188,18 @@ app.directive('spring', function($parse, $log) {
           // NOTE, for some reason, intersects[0].point.x has a starting value, and the 
           // if statement is run (even though SELECTED should be null). It seems that raycaster
           // initializes with an actual value. Don't know why.
-          var currentMouse = (intersects[0].point.x + 30) / 100;
+          var currentMouse = (intersects[0].point.x) / 100;
 
           //$log.log(intersects[0].point.x);
 
-          if (intersects[0].point.x > 11 && intersects[0].point.x < 92) {
+          if (intersects[0].point.x > 0 && intersects[0].point.x < 50) {
 
             //SELECTED.position.x = intersects[0].point.x - 20;
                         
             spring.morphTargetInfluences[0] = currentMouse;
             spring.morphTargetInfluences[1] = 1 - currentMouse;
             
-            block.x = intersects[0].point.x + 40;
+            springPhys.x = intersects[0].point.x;
             // This works at updating the scope parent. Have to use scope.$apply in order to update to the parent scope.
             // You must use the $apply, because it is within a function, and in order for angular to execute it you have to
             // explicitly add it to its cycle.  
@@ -232,8 +234,11 @@ app.directive('spring', function($parse, $log) {
         
         mouse.isDown = true;
 
+        window.removeEventListener('mousedown', onDocumentMouseDown, false);
+        window.addEventListener('mouseup', onDocumentMouseUp, false);
+
         if (intersects.length > 0) {
-          $log.log("working");
+
           SELECTED = intersects[0].object;
           var intersects = raycaster.intersectObject(plane);
           offset.copy(intersects[0].point).sub(plane.position);
@@ -243,6 +248,9 @@ app.directive('spring', function($parse, $log) {
 
       function onDocumentMouseUp(event) {
         event.preventDefault();
+
+        window.removeEventListener('mouseup', onDocumentMouseUp, false);
+        window.addEventListener('mousedown', onDocumentMouseDown, false);
         
         mouse.isDown = false;
         
@@ -269,16 +277,16 @@ app.directive('spring', function($parse, $log) {
       // http://burakkanber.com/blog/physics-in-javascript-car-suspension-part-1-spring-mass-damper/
       /* Spring stiffness, in kg / s^2 */
       var k = -20;
-      var springLength = 90;
+      var springLength = 100;
 
       /* Damping constant, in kg / s */
-      var b = -0.0;
+      var b = -0.3;
 
-      /* Block position and velocity. */
-      var block = {
-        x: 100,
-        v: 0,
-        mass: 0.5
+      /* springPhys position and velocity. */
+      var springPhys = {
+        x: 0,
+        v: -3,
+        mass: 1
       };
 
 
@@ -293,22 +301,27 @@ app.directive('spring', function($parse, $log) {
         // eliminated mention of the wall, as it was not necessary for this. 
 
         // defines the force experienced by the spring. need spring length to equal equilibrium position.
-        var F_spring = k * (block.x - springLength);
+        var F_spring = k * (springPhys.x - springLength);
 
         // defines the dampening force, it is always opposed to motion.
-        var F_damper = b * block.v;
 
+        if (springPhys.v < 20) {
+          var F_damper = 0;
+        } else {
+          var F_damper = b * springPhys.v;
+        }
+       
         //acceleraiton is the net force, divided by the mass of the spring/ball system
-        var a = (F_spring + F_damper) / block.mass;
+        var a = (F_spring + F_damper) / springPhys.mass;
 
         //this is the change in velocity at a certain time measure
-        block.v += a * frameRate;
+        springPhys.v += a * frameRate;
 
         //this  is the change in position with respect to that time measure.
-        block.x += block.v * frameRate;
+        springPhys.x += springPhys.v * frameRate;
 
         //convert this position into a specific morph
-        var changeIn = springLength - block.x;
+        var changeIn = springLength - springPhys.x;
 
         //changeFraction is a fractional number.
         var changeFraction = changeIn / springLength;
@@ -319,7 +332,7 @@ app.directive('spring', function($parse, $log) {
           1 - spring.morphTargetInfluences[0];
           
           scope.$apply(function() {
-              exp.assign(scope.$parent, block.x - 40);
+              exp.assign(scope.$parent, springPhys.x);
             });
       }
         renderer.render(scene, camera);

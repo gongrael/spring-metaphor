@@ -36,8 +36,8 @@ app.directive('springChart', function($parse, $window, $log) {
 
       //for the trace
       var dataSet = [{
-        x: 133 + ballDataToPlot,
-        y: 360 - (50 - ballDataToPlot) * (50 - ballDataToPlot) / 4
+        x: ballDataToPlot,
+        y: 360 - (ballDataToPlot) * (ballDataToPlot) / 4
       }]
 
       //determines the max and minumum value in the dataset.
@@ -79,7 +79,6 @@ app.directive('springChart', function($parse, $window, $log) {
       scope.$watch(exp, function(newVal, oldVal) {
         if (newVal != oldVal) {
           oldValue = oldVal;
-
           ballDataToPlot = newVal;
           traceBall();
           redrawBallChart(); 
@@ -92,18 +91,18 @@ app.directive('springChart', function($parse, $window, $log) {
       // A sorting operation is needed to make sure the graph is connected properly. 
       
        function traceBall() {
-          if (ballDataToPlot+133 < maxAndMin.min) {
+          if (Math.round(ballDataToPlot) < maxAndMin.min) {
             newPoint = true;
             dataSet.push({
-              x: 133 + ballDataToPlot,
-              y: 360 - (50 - ballDataToPlot) * (50 - ballDataToPlot) / 4
+              x: ballDataToPlot,
+              y: 360 - (ballDataToPlot) * (ballDataToPlot) / 4
             });
           }
-          else if (Math.round(ballDataToPlot+133) > maxAndMin.max) {
+          else if (Math.round(ballDataToPlot) > maxAndMin.max) {
             newPoint = true;
             dataSet.push({
-              x: 133 + ballDataToPlot,
-              y: 360 - (50 - ballDataToPlot) * (50 - ballDataToPlot) / 4
+              x: ballDataToPlot,
+              y: 360 - (ballDataToPlot) * (ballDataToPlot) / 4
             });
           }
           // use the array sort method in conjunction with a simple function, that points the sorter to the object property.
@@ -187,8 +186,8 @@ app.directive('springChart', function($parse, $window, $log) {
         // use class to give it an identifier that allows it to be manipulated easily. 
         svg.append("circle")
           .attr({
-            cx: 133 + ballDataToPlot,
-            cy: 360 - (50 - ballDataToPlot) * (50 - ballDataToPlot) / 4,
+            cx: ballDataToPlot,
+            cy: 360 - (ballDataToPlot) * (ballDataToPlot) / 4,
             r: 7,
             "fill": "#4bc4c4",
             "class": "solid",
@@ -214,8 +213,8 @@ app.directive('springChart', function($parse, $window, $log) {
         //selects all objects with the class solid, only one ball has that class in this case. 
         svg.selectAll(".solid")
           .attr({
-            cx: 133 + ballDataToPlot,
-            cy: 360 - (50 - ballDataToPlot) * (50 - ballDataToPlot) / 4,
+            cx: ballDataToPlot,
+            cy: 360 - (ballDataToPlot) * (ballDataToPlot) / 4,
           });
 
         if (newPoint) {
