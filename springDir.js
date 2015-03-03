@@ -200,6 +200,7 @@ app.directive('spring', function($parse, $log) {
             spring.morphTargetInfluences[1] = 1 - currentMouse;
             
             springPhys.x = intersects[0].point.x;
+            
             // This works at updating the scope parent. Have to use scope.$apply in order to update to the parent scope.
             // You must use the $apply, because it is within a function, and in order for angular to execute it you have to
             // explicitly add it to its cycle.  
