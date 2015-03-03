@@ -290,7 +290,6 @@ app.directive('spring', function($parse, $log) {
       };
 
 
-
       function render() {
       if (spring && !mouse.isDown) // exists / is loaded 
       {
@@ -331,9 +330,9 @@ app.directive('spring', function($parse, $log) {
         spring.morphTargetInfluences[1] =
           1 - spring.morphTargetInfluences[0];
           
-          scope.$apply(function() {
-              exp.assign(scope.$parent, springPhys.x);
-            });
+        scope.$apply(function() {
+            exp.assign(scope.$parent, springPhys.x);
+          });
       }
         renderer.render(scene, camera);
       }
