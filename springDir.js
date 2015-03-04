@@ -1,4 +1,4 @@
-app.directive('spring', function($parse, $log) {
+app.directive('spring', function($parse, $log, $timeout) {
   return {
     restrict: "EA",
     template: '<div id="webgl-container" class="centred"></div>',
@@ -191,11 +191,10 @@ app.directive('spring', function($parse, $log) {
           var currentMouse = (intersects[0].point.x) / 100;
 
           //$log.log(intersects[0].point.x);
-
-          if (intersects[0].point.x > 0 && intersects[0].point.x < 50) {
+          //if (intersects[0].point.x > 0 && intersects[0].point.x < 50) {
 
             //SELECTED.position.x = intersects[0].point.x - 20;
-                        
+                       
             spring.morphTargetInfluences[0] = currentMouse;
             spring.morphTargetInfluences[1] = 1 - currentMouse;
             
@@ -204,11 +203,11 @@ app.directive('spring', function($parse, $log) {
             // This works at updating the scope parent. Have to use scope.$apply in order to update to the parent scope.
             // You must use the $apply, because it is within a function, and in order for angular to execute it you have to
             // explicitly add it to its cycle.  
-            scope.$apply(function() {
-              exp.assign(scope.$parent, intersects[0].point.x);
-            });
-           }
-
+            // scope.$apply(function() {
+            //   exp.assign(scope.$parent, intersects[0].point.x);
+            // });
+           
+           //}
           //return;
         }
 
@@ -292,6 +291,12 @@ app.directive('spring', function($parse, $log) {
 
 
       function render() {
+      $timeout(function() {
+        scope.$apply(function() {
+            exp.assign(scope.$parent, springPhys.x);
+          });
+      });
+
       if (spring && !mouse.isDown) // exists / is loaded 
       {
         // former way of determining the amount of the morph, need to switch to physics interpretation.
@@ -330,10 +335,7 @@ app.directive('spring', function($parse, $log) {
           0.65 - changeFraction;
         spring.morphTargetInfluences[1] =
           1 - spring.morphTargetInfluences[0];
-          
-        scope.$apply(function() {
-            exp.assign(scope.$parent, springPhys.x);
-          });
+        
       }
         renderer.render(scene, camera);
       }
