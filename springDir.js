@@ -39,6 +39,7 @@ app.directive('spring', function($parse, $log, $timeout) {
       mouse.isDown = false;
 
       var spring;
+      var invisSphere;
 
       var fullSpring = 0;
       var compressSpring = 1;
@@ -70,7 +71,7 @@ app.directive('spring', function($parse, $log, $timeout) {
 
       function initScene() {
 
-        var width = 400;
+        var width = 600;
         var height = 100;
 
         // setup renderer
@@ -120,6 +121,28 @@ app.directive('spring', function($parse, $log, $timeout) {
         plane.visible = false;
         scene.add(plane);
 
+
+        ///////////
+        ///Sphere//
+        ///////////
+   
+        var sphereMaterial = new THREE.MeshPhongMaterial({
+        color: 0x0000ff,
+        ambient: 0x0000ff,
+        transparent: true,
+        opacity: 0.95,
+        });
+        var sphereGeo = new THREE.SphereGeometry(25, 32, 16);
+        invisSphere = new THREE.Mesh(sphereGeo, sphereMaterial);
+        invisSphere.visible = false;
+        
+        scene.add(invisSphere);       
+        objects.push(invisSphere); 
+
+        ///////////
+        ///Spring//
+        ///////////
+
         //Loading the model. In this case we loaded a spring
         // the spring was animated used shape keys, and a very simple material was added.
 
@@ -148,13 +171,18 @@ app.directive('spring', function($parse, $log, $timeout) {
         // materials are definied in the JSON file for the 3D model. 
         var material = new THREE.MeshFaceMaterial(materials);
         spring = new THREE.Mesh(geometry, material);
-        spring.scale.set(11, 11, 11);
+        spring.scale.set(14, 14, 14);
         spring.rotation.z = (convert(-90))
-        spring.position.x = 0;
+        
+        //need to come up with a good way of orienting the spring
+        //
+        spring.position.x = -105;
+
         scene.add(spring);
 
         //push in the spring to objects so you can detect when its selected
-        objects.push(spring);
+        //Use an invisible sphere the moves with the end of the spring.
+        //objects.push(spring);
       }
 
       //quick function for converting degrees into radians.
@@ -170,13 +198,11 @@ app.directive('spring', function($parse, $log, $timeout) {
         event.preventDefault();
 
         // have to use the render.domElement.offset, in order to have the 3D assets anywhere on the page. 
-
         mouse.x = ((event.clientX - renderer.domElement.offsetLeft) / renderer.domElement.width) * 2 - 1;
         mouse.y = -((event.clientY - renderer.domElement.offsetTop) / renderer.domElement.height) * 2 + 1;
 
         // raycaster is the way of determining the selection. It is based on the mouse position and the camera angle within
         // the scene.
-
         raycaster.setFromCamera(mouse, camera);
 
         //if an object is selected, do what is inside this if statement
@@ -184,31 +210,23 @@ app.directive('spring', function($parse, $log, $timeout) {
           //why are we using the position on the plane to determine movement? This is for the offset, helps to normalize?
           // as you start moving the object, its coordinates change, causes issues?
           var intersects = raycaster.intersectObject(plane);
+
+          invisSphere.position.x = intersects[0].point.x-50;
+          
           // CHANGES THE MORPH OF THE SPRING BASED ON THE POSITION OF THE BALL
           // NOTE, for some reason, intersects[0].point.x has a starting value, and the 
           // if statement is run (even though SELECTED should be null). It seems that raycaster
           // initializes with an actual value. Don't know why.
-          var currentMouse = (intersects[0].point.x) / 100;
+          var currentMouse = (intersects[0].point.x) / 105;
 
-          //$log.log(intersects[0].point.x);
-          //if (intersects[0].point.x > 0 && intersects[0].point.x < 50) {
-
-            //SELECTED.position.x = intersects[0].point.x - 20;
+          //SELECTED.position.x = intersects[0].point.x - 20;
                        
-            spring.morphTargetInfluences[0] = currentMouse;
-            spring.morphTargetInfluences[1] = 1 - currentMouse;
+          spring.morphTargetInfluences[0] = currentMouse;
+          spring.morphTargetInfluences[1] = 1 - currentMouse;
+          
+          springPhys.x = intersects[0].point.x;
             
-            springPhys.x = intersects[0].point.x;
-            
-            // This works at updating the scope parent. Have to use scope.$apply in order to update to the parent scope.
-            // You must use the $apply, because it is within a function, and in order for angular to execute it you have to
-            // explicitly add it to its cycle.  
-            // scope.$apply(function() {
-            //   exp.assign(scope.$parent, intersects[0].point.x);
-            // });
-           
-           //}
-          //return;
+           //return;
         }
 
         var intersects = raycaster.intersectObjects(objects);
@@ -228,8 +246,8 @@ app.directive('spring', function($parse, $log, $timeout) {
 
       function onDocumentMouseDown(event) {
         event.preventDefault();
-        var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5).unproject(camera);
-        var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
+        // var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5).unproject(camera);
+        // var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
         var intersects = raycaster.intersectObjects(objects);
         
         mouse.isDown = true;
@@ -291,6 +309,8 @@ app.directive('spring', function($parse, $log, $timeout) {
 
 
       function render() {
+
+      //This function updates the scope variable, which is the x position of the springPhys  
       $timeout(function() {
         scope.$apply(function() {
             exp.assign(scope.$parent, springPhys.x);
@@ -324,6 +344,10 @@ app.directive('spring', function($parse, $log, $timeout) {
 
         //this  is the change in position with respect to that time measure.
         springPhys.x += springPhys.v * frameRate;
+
+
+        //INVISIBLE Sphere on top of the end of the spring.
+        invisSphere.position.x = springPhys.x -80;
 
         //convert this position into a specific morph
         var changeIn = springLength - springPhys.x;
