@@ -34,9 +34,18 @@ app.directive('spring', function($parse, $log, $timeout) {
         offset = new THREE.Vector3(),
         INTERSECTED, SELECTED;
       var currentMouse;
-
+      //max stretch on spring
+      var maxMouse = 1.9;
+      //break Point on spring
+      var breakPoint = 2.5;
+      //min compress on spring
+      var minMouse = 0.1;
+ 
       //Add the property isDown to mouse, in order to pause the animation
       mouse.isDown = false;
+      var brokenSpring = false;
+      var counter = 0;
+      var brokenFrames = 60;
 
       var spring;
       var invisSphere;
@@ -149,6 +158,40 @@ app.directive('spring', function($parse, $log, $timeout) {
         var jsonLoader = new THREE.JSONLoader();
         jsonLoader.load("springAni.json", addModelToScene);
         // addModelToScene function is called back after model has loaded
+        // 
+        // 
+        // 
+        // 
+        
+        ///////////
+        //  TEXT //
+        ///////////
+        // create a canvas element
+        var canvas1 = document.createElement('canvas');
+        var context1 = canvas1.getContext('2d');
+        context1.font = "Bold 14px Tahoma";
+        context1.fillStyle = "rgba(0,0,0,0.95)";
+        context1.fillText('Click refresh to restart simulation', 0, 20);
+      
+        // canvas contents will be used for a texture
+        var texture1 = new THREE.Texture(canvas1) 
+        texture1.needsUpdate = true;
+        //set this to LinearFilter to prevent warning.
+        texture1.minFilter = THREE.LinearFilter;
+              
+        var material1 = new THREE.MeshBasicMaterial( {map: texture1, side:THREE.DoubleSide} );
+        material1.transparent = true;
+
+        var mesh1 = new THREE.Mesh(
+            new THREE.PlaneBufferGeometry(canvas1.width, canvas1.height),
+            material1
+          );
+
+        mesh1.name = "text";
+        mesh1.position.set(width/8,-100,0);
+        mesh1.visible = false;
+        scene.add( mesh1 );
+        
 
 
         //These are listening for clicks of the mouse on the screen.
@@ -171,12 +214,12 @@ app.directive('spring', function($parse, $log, $timeout) {
         // materials are definied in the JSON file for the 3D model. 
         var material = new THREE.MeshFaceMaterial(materials);
         spring = new THREE.Mesh(geometry, material);
-        spring.scale.set(14, 14, 14);
+        spring.scale.set(3.4, 3.4, 3.4);
         spring.rotation.z = (convert(-90))
         
         //need to come up with a good way of orienting the spring
-        //
-        spring.position.x = -105;
+        // the length of the spring is ~83
+        spring.position.x = -77;
 
         scene.add(spring);
 
@@ -211,22 +254,42 @@ app.directive('spring', function($parse, $log, $timeout) {
           // as you start moving the object, its coordinates change, causes issues?
           var intersects = raycaster.intersectObject(plane);
 
-          invisSphere.position.x = intersects[0].point.x-50;
-          
           // CHANGES THE MORPH OF THE SPRING BASED ON THE POSITION OF THE BALL
           // NOTE, for some reason, intersects[0].point.x has a starting value, and the 
           // if statement is run (even though SELECTED should be null). It seems that raycaster
           // initializes with an actual value. Don't know why.
-          var currentMouse = (intersects[0].point.x) / 105;
-
-          //SELECTED.position.x = intersects[0].point.x - 20;
-                       
-          spring.morphTargetInfluences[0] = currentMouse;
-          spring.morphTargetInfluences[1] = 1 - currentMouse;
+          currentMouse = (intersects[0].point.x) / springLength;
           
-          springPhys.x = intersects[0].point.x;
-            
-           //return;
+          maxMouse = 1.9;
+          
+          breakPoint = 3;
+
+          minMouse = 0.1;
+
+          if (currentMouse > 0.1 && currentMouse <= maxMouse) {
+            spring.morphTargetInfluences[1] = currentMouse; 
+            spring.morphTargetInfluences[0] = 1 - currentMouse;
+            springPhys.x = intersects[0].point.x;
+            invisSphere.position.x = intersects[0].point.x;
+          }
+          else if (currentMouse > maxMouse && currentMouse <= breakPoint) {
+            spring.morphTargetInfluences[1] = maxMouse; 
+            spring.morphTargetInfluences[0] = 1-maxMouse;
+            springPhys.x = maxMouse*springLength;
+            invisSphere.position.x = maxMouse*springLength;
+          }  
+          else if (currentMouse > -0.5 && currentMouse <=minMouse) {
+            spring.morphTargetInfluences[1] = minMouse; 
+            spring.morphTargetInfluences[0] = 1 - minMouse;
+            springPhys.x = minMouse*springLength;
+            invisSphere.position.x = minMouse*springLength;
+          }
+          else if (currentMouse > breakPoint)
+          {
+            brokenSpring = true;
+            springPhys.x = 245;
+            SELECTED = null;
+          }  
         }
 
         var intersects = raycaster.intersectObjects(objects);
@@ -244,6 +307,8 @@ app.directive('spring', function($parse, $log, $timeout) {
         }
       }
 
+
+
       function onDocumentMouseDown(event) {
         event.preventDefault();
         // var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5).unproject(camera);
@@ -256,11 +321,14 @@ app.directive('spring', function($parse, $log, $timeout) {
         window.addEventListener('mouseup', onDocumentMouseUp, false);
 
         if (intersects.length > 0) {
-
           SELECTED = intersects[0].object;
           var intersects = raycaster.intersectObject(plane);
-          offset.copy(intersects[0].point).sub(plane.position);
+
+          springPhys.v = 0;
+
+          //offset.copy(intersects[0].point).sub(plane.position);
           container.style.cursor = 'move';
+
         }
       }
 
@@ -288,14 +356,14 @@ app.directive('spring', function($parse, $log, $timeout) {
       //from the spring physics, likely redundant with the animation. 
       // http://burakkanber.com/blog/physics-in-javascript-car-suspension-part-1-spring-mass-damper/
 
-      var frameRate = 1 / 120;
+      var frameRate = 1 / 150;
       var frameDelay = frameRate * 1000;
 
       //The below variables are from the physics tutorial 
       // http://burakkanber.com/blog/physics-in-javascript-car-suspension-part-1-spring-mass-damper/
       /* Spring stiffness, in kg / s^2 */
       var k = -20;
-      var springLength = 100;
+      var springLength = 81; //equilibrium length
 
       /* Damping constant, in kg / s */
       var b = -0.3;
@@ -317,7 +385,9 @@ app.directive('spring', function($parse, $log, $timeout) {
           });
       });
 
-      if (spring && !mouse.isDown) // exists / is loaded 
+      //if (false)
+
+      if (spring && !mouse.isDown && !brokenSpring) // exists / is loaded 
       {
         // former way of determining the amount of the morph, need to switch to physics interpretation.
         // time = new Date().getTime() % duration;
@@ -330,7 +400,7 @@ app.directive('spring', function($parse, $log, $timeout) {
 
         // defines the dampening force, it is always opposed to motion.
 
-        if (springPhys.v < 20) {
+        if (Math.abs(springPhys.v) < 100) {
           var F_damper = 0;
         } else {
           var F_damper = b * springPhys.v;
@@ -346,8 +416,9 @@ app.directive('spring', function($parse, $log, $timeout) {
         springPhys.x += springPhys.v * frameRate;
 
 
-        //INVISIBLE Sphere on top of the end of the spring.
-        invisSphere.position.x = springPhys.x -80;
+        //INVISIBLE Sphere on top of the end of the spring. 
+        //corrected so that it is right on tope of the animation
+        invisSphere.position.x = springPhys.x-20;
 
         //convert this position into a specific morph
         var changeIn = springLength - springPhys.x;
@@ -355,12 +426,36 @@ app.directive('spring', function($parse, $log, $timeout) {
         //changeFraction is a fractional number.
         var changeFraction = changeIn / springLength;
 
-        spring.morphTargetInfluences[0] =
-          0.65 - changeFraction;
         spring.morphTargetInfluences[1] =
-          1 - spring.morphTargetInfluences[0];
-        
+          1 - changeFraction;
+        spring.morphTargetInfluences[0] =
+          1 - spring.morphTargetInfluences[1];        
       }
+
+      brokenFrames = 25;
+      var morphZeroFinal = 0;
+      var morphOneFinal = 0;
+      var morphTwoFinal = 1;
+      var morphZeroChange = (morphZeroFinal - (1-maxMouse))/brokenFrames;
+      var morphOneChange = (morphOneFinal - (maxMouse))/brokenFrames;
+      var morphTwoChange = (morphTwoFinal - 0)/brokenFrames;
+
+      if (brokenSpring && counter < brokenFrames) {
+
+        objects = [];
+      
+        counter += 1;
+        spring.morphTargetInfluences[0] = 1-maxMouse + counter*morphZeroChange;
+        spring.morphTargetInfluences[1] = maxMouse + counter*morphOneChange;
+        spring.morphTargetInfluences[2] = 0 + counter*morphTwoChange;
+
+        //append button that says click here to refresh.
+      } 
+      else if (counter >= brokenFrames) {
+          var selectText = scene.getObjectByName("text");
+          selectText.visible = true;
+      }
+
         renderer.render(scene, camera);
       }
 

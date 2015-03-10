@@ -1,10 +1,10 @@
-app.directive('springChart', function($parse, $window, $log) {
+app.directive('springChart', function($parse, $window, $log, $interval) {
   return {
     restrict: 'EA',
     //replace: true,
     //directives need a template, places down the SVG holder for the d3 objects
     //could do it using d3, most likely.
-    template: "<svg width ='400' height='400' class='centred'><g class='forTrace'></g></svg>",
+    template: "<svg class='centred'><g class='forTrace'></g> <g class='brokenTrace'> </g></svg>",
 
 
     // link is a function used to modify the DOM, great for updating positions 
@@ -16,6 +16,29 @@ app.directive('springChart', function($parse, $window, $log) {
       var newPoint = false; //this is for controlling when a new ball is drawn. 
       var oldValue = "";
 
+
+      //////////////////////
+      ///spring break ani///
+      //////////////////////
+
+      //copy these parameters from sphereChart, will eventually make them part of the scope so 
+      //all directives can have access to them
+
+      var springLength = 81;
+
+      //if currentMouse = 1.5
+      var  maxMouse = 1.9;
+      // intersects[0].point.x = 157.50
+      var  breakPoint = 3;
+
+      var minMouse = 0.1;
+
+      //This variable defines the value of  ballDataToPlot that corresponds to the break action.
+      var springBreakPoint= breakPoint * springLength;
+      var springBreakPointY = 1000; 
+      var startSpringAni;
+
+      //var springBroken = false;
 
       //parses all the data found in the attribute ball-data, in this case it will grab the data represeted by ballX. 
       //Parse creates a function of sorts, which can be fed a specific scope? Not 100% sure, need to read more.
@@ -34,11 +57,30 @@ app.directive('springChart', function($parse, $window, $log) {
       //is a selection for that svg.
       var svg = d3.select(rawSvg[0]);
 
-      //for the trace
+      var width = 400;
+      var height = 400;
+
+      svg.attr({
+        "width" : width,
+        "height" : height
+      });
+
+      var leftPad = 50;
+      var topPad = 40;
+      var textPad = 10;
+
+      var parabolaXScale = 1.6;
+      var parabolaYScale = 12;
+
+      //for the normal trace
       var dataSet = [{
-        x: ballDataToPlot,
-        y: 360 - (ballDataToPlot) * (ballDataToPlot) / 4
+        x: (ballDataToPlot - springLength)*parabolaXScale,
+        y: (height-topPad) - Math.pow((ballDataToPlot - springLength), 2) / parabolaYScale,
       }]
+
+
+      //for the broken trace
+      var dataBroken = [];
 
       //determines the max and minumum value in the dataset.
 
@@ -53,6 +95,21 @@ app.directive('springChart', function($parse, $window, $log) {
           return d.y;
         })
         .interpolate('basis'); //basis to make it a curved line.
+
+
+
+      // defines the function that will be used to make the broken line path.      
+      var lineBrokenFunc = d3.svg.line()
+        .x(function(d) {
+          return d.x;
+        })
+        .y(function(d) {
+          return d.y;
+        })
+        .interpolate('linear'); //linear a straight line.
+
+
+
 
       // This function checks the value of the number, compares it to a global max and min, and resets the global variables minX and maxX.
       function maxOrMin (dataArray) {
@@ -80,9 +137,15 @@ app.directive('springChart', function($parse, $window, $log) {
         if (newVal != oldVal) {
           oldValue = oldVal;
           ballDataToPlot = newVal;
-          traceBall();
-          redrawBallChart(); 
-          maxAndMin = maxOrMin(dataSet);
+          if (ballDataToPlot >= springBreakPoint)
+          {
+            startSpringAni = $interval(brokenSpringChart, 10, 15, false);
+          }
+          else {
+            traceBall();
+            redrawBallChart(); 
+            maxAndMin = maxOrMin(dataSet);
+          }
          }
       })
 
@@ -94,15 +157,15 @@ app.directive('springChart', function($parse, $window, $log) {
           if (Math.round(ballDataToPlot) < maxAndMin.min) {
             newPoint = true;
             dataSet.push({
-              x: ballDataToPlot,
-              y: 360 - (ballDataToPlot) * (ballDataToPlot) / 4
+              x: (ballDataToPlot - springLength)*parabolaXScale,
+              y: (height-topPad) - Math.pow((ballDataToPlot - springLength), 2) / parabolaYScale
             });
           }
           else if (Math.round(ballDataToPlot) > maxAndMin.max) {
             newPoint = true;
             dataSet.push({
-              x: ballDataToPlot,
-              y: 360 - (ballDataToPlot) * (ballDataToPlot) / 4
+              x: (ballDataToPlot - springLength)*parabolaXScale,
+              y: (height-topPad) - Math.pow((ballDataToPlot - springLength), 2) / parabolaYScale
             });
           }
           // use the array sort method in conjunction with a simple function, that points the sorter to the object property.
@@ -129,12 +192,12 @@ app.directive('springChart', function($parse, $window, $log) {
         // use the domain to specify the lowest and highest value possible
         // use the range to confine this range to certain dimensions. 
         xScale = d3.scale.linear()
-          .domain([-5, 10])
-          .range([0, rawSvg.attr("width")]);
+          .domain([-10, 10])
+          .range([0, (rawSvg.attr("width") -leftPad - textPad)]);
 
         yScale = d3.scale.linear()
           .domain([0, 50])
-          .range([rawSvg.attr("height"), 0]);
+          .range([ (rawSvg.attr("height") - topPad - textPad), 0]);
 
         xAxisGen = d3.svg.axis()
           .scale(xScale)
@@ -158,16 +221,16 @@ app.directive('springChart', function($parse, $window, $log) {
         // the attribute transform allows you to move an entire group at once.
         svg.append("svg:g")
           .attr("class", "x axis")
-          .attr("transform", "translate(50, 360)")
+          .attr("transform", "translate("+ leftPad +", "+ (height-topPad) +")")
           .call(xAxisGen);
 
         svg.append("svg:g")
           .attr("class", "y axis")
-          .attr("transform", "translate(50,-40)")
+          .attr("transform", "translate("+ leftPad +", "+ textPad +")")
           .call(yAxisGen);
 
         svg.append("text")
-          .attr("transform", "translate(" + 210 + " ," + 396 + ")")
+          .attr("transform", "translate(" + (width + leftPad - textPad)/2 + " ," + (height-textPad) + ")")
           .attr("class", "axislabels")
           .style("text-anchor", "middle")
           .text("Displacement from Equilibrium (cm)");
@@ -186,19 +249,30 @@ app.directive('springChart', function($parse, $window, $log) {
         // use class to give it an identifier that allows it to be manipulated easily. 
         svg.append("circle")
           .attr({
-            cx: ballDataToPlot,
-            cy: 360 - (ballDataToPlot) * (ballDataToPlot) / 4,
+            // cx: ballDataToPlot,
+            // cy: (height-topPad) - Math.pow(ballDataToPlot, 2) / parabolaYScale,
+            cx: (ballDataToPlot - springLength)*parabolaXScale,
+            cy: (height-topPad) - Math.pow((ballDataToPlot - springLength), 2) / parabolaYScale,
             r: 7,
             "fill": "#4bc4c4",
             "class": "solid",
-            "transform": "translate(183)"
+            "transform": "translate("+ (width+leftPad-textPad)/2 +")"
           });
 
 
         d3.select(".forTrace")
           .append("svg:path")
-          .attr("transform", "translate(183)")
+          .attr("transform", "translate("+ (width+leftPad-textPad)/2 +")")
           .attr("d", lineFunc(dataSet))
+          .attr("stroke", "grey")
+          .attr("stroke-width", 1)
+          .attr("fill", "none");
+
+
+         d3.select(".brokenTrace")
+          .append("svg:path")
+          .attr("transform", "translate("+ (width+leftPad-textPad)/2 +")")
+          .attr("d", lineFunc(dataBroken))
           .attr("stroke", "grey")
           .attr("stroke-width", 1)
           .attr("fill", "none");
@@ -215,16 +289,49 @@ app.directive('springChart', function($parse, $window, $log) {
         //selects all objects with the class solid, only one ball has that class in this case. 
         svg.selectAll(".solid")
           .attr({
-            cx: ballDataToPlot,
-            cy: 360 - (ballDataToPlot) * (ballDataToPlot) / 4,
-          });
+            cx: (ballDataToPlot - springLength)*parabolaXScale,
+            cy: (height-topPad) - Math.pow((ballDataToPlot - springLength), 2) / parabolaYScale  
+         });
 
         if (newPoint) {
         svg.select(".forTrace path")
           .attr("d", lineFunc(dataSet));
         newPoint = false;
-        }
+        }   
       }
+
+      function brokenSpringChart ()   {
+
+        console.log("called")
+        //if it equals its initial value;
+        if (springBreakPoint != 243)  {
+          springBreakPointY = height-topPad;
+        }
+        else springBreakPointY = -1000;
+
+        dataBroken.push({
+            x: (springBreakPoint-springLength*2-10)*parabolaXScale,
+            y: springBreakPointY
+          }
+        )
+
+        d3.select(".brokenTrace")
+          .append("svg:path")
+          .attr("transform", "translate("+ (width+leftPad-textPad)/2 +")")
+          .attr("d", lineBrokenFunc(dataBroken))
+          .attr("stroke", "red")
+          .attr("stroke-width", 1)
+          .attr("fill", "none");
+
+         svg.selectAll(".solid")
+          .attr({
+            cx: (springBreakPoint-springLength*2-10)*parabolaXScale,
+            cy: springBreakPointY
+         });
+
+         springBreakPoint += 1;
+       }
+
 
       drawBallChart();
 
