@@ -15,8 +15,9 @@
 h1{
   font-family: sans-serif;
   font-weight: bold;
-  font-size: 16px;
+  margin-left: 12px;
 }
+
 .tick
 {
   stroke-dasharray: 1, 2;
@@ -32,11 +33,14 @@ h1{
 }
 
 canvas {
-    padding-left: 0;
-    padding-right: 100px;
-    margin-left: auto;
+/*    margin-left: auto;
     margin-right: auto;
-    display: block;
+    display: block;*/
+    margin-left: -50px;
+}
+
+svg {
+  margin-left: 100px;
 }
 
 
@@ -47,8 +51,33 @@ canvas {
 }
 
 .head3 {
-  color: #4bc4c4;
+  color: #059eb1;
+  margin-left: 150px;
+}
+
+.top-pad {
+  padding-top: 40px;
+}
+
+.side-bar {
+  padding-top: 50px;
 }
 
 
+.teal {
+  color: #059eb1;
+  font-family: sans-serif;
+}
 
+.grey {
+  color: #727272;
+}
+
+.right-align {
+  padding-top: 80px;
+  text-align: center;
+}
+
+p {
+  font-family: serif;
+}

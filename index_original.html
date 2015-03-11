@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+    <!-- Libraries -->
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r70/three.min.js"></script>
+
+ <!-- Style Sheets -->
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css"> -->
+    <link rel="stylesheet" href="style.css" />
+
+ <!-- Program Scripts -->      
+    <script src="script.js"></script>
+    <script src="springChartDir.js"></script>
+    <script src="springDir.js"></script>
+  
+  </head>
+
+  <body>
+   
+    <div ng-app="ballApp" ng-controller="ballController">
+    
+    
+    <h3 class="head3"> Simple oscillator: Ball on a spring </h3>
+
+    <div class="top-pad"></div>
+    
+    <spring-chart ball-data="ballX.value"></spring-chart>
+   
+    <spring ball-data-spring="ballX.value" id="webgl-container"></spring>
+     
+    </div>
+    
+  </body>
+
+</html>

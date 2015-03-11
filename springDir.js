@@ -1,7 +1,7 @@
 app.directive('spring', function($parse, $log, $timeout) {
   return {
     restrict: "EA",
-    template: '<div id="webgl-container" class="centred"></div>',
+    //template: '<div id="webgl-container"></div>',
 
     // MUST use this scope, which is an isolated child scope, but still possess two-way binding? Still unclear how this works exactly. Will
     //continue to learn about it. But for now, this will allow you to 
@@ -24,7 +24,7 @@ app.directive('spring', function($parse, $log, $timeout) {
 
       //need to define the variable container so that we can match it with the draggable example. 
       var container = document.getElementById("webgl-container");
-
+      
       // Variables to make the mouse tracking work.
       var objects = [],
         plane;
@@ -52,6 +52,8 @@ app.directive('spring', function($parse, $log, $timeout) {
 
       var fullSpring = 0;
       var compressSpring = 1;
+
+      var clicked = false;
 
 
       //define variables for the scene. Define previous so that you can remove the object. Define material so you can load
@@ -166,12 +168,15 @@ app.directive('spring', function($parse, $log, $timeout) {
         ///////////
         //  TEXT //
         ///////////
+        
+        // Click teal ball message.
+                
         // create a canvas element
         var canvas1 = document.createElement('canvas');
         var context1 = canvas1.getContext('2d');
-        context1.font = "Bold 14px Tahoma";
-        context1.fillStyle = "rgba(0,0,0,0.95)";
-        context1.fillText('Click refresh to restart simulation', 0, 20);
+        context1.font = "14px Tahoma";
+        context1.fillStyle = "rgba(0,0,0,0.55)";
+        context1.fillText('Click and drag the teal ball to start', 0, 20);
       
         // canvas contents will be used for a texture
         var texture1 = new THREE.Texture(canvas1) 
@@ -187,13 +192,40 @@ app.directive('spring', function($parse, $log, $timeout) {
             material1
           );
 
-        mesh1.name = "text";
+        mesh1.name = "clickText";
         mesh1.position.set(width/8,-100,0);
-        mesh1.visible = false;
+        //mesh1.visible = false;
         scene.add( mesh1 );
-        
 
 
+        //Refresh Message
+
+        var canvas2 = document.createElement('canvas');
+        var context2 = canvas2.getContext('2d');
+        context2.font = "14px Tahoma";
+        context2.fillStyle = "rgba(200,0,0,0.55)";
+        context2.fillText('The spring broke. Click HERE to restart!', 0, 20);
+      
+        // canvas contents will be used for a texture
+        var texture2 = new THREE.Texture(canvas2) 
+        texture2.needsUpdate = true;
+        //set this to LinearFilter to prevent warning.
+        texture2.minFilter = THREE.LinearFilter;
+              
+        var material2 = new THREE.MeshBasicMaterial( {map: texture2, side:THREE.DoubleSide} );
+        material2.transparent = true;
+
+        var mesh2 = new THREE.Mesh(
+            new THREE.PlaneBufferGeometry(canvas1.width, canvas1.height),
+            material2
+          );
+
+        mesh2.name = "text";
+        mesh2.position.set(width/8,-100,0);
+        mesh2.visible = false;
+        scene.add( mesh2 );
+
+     
         //These are listening for clicks of the mouse on the screen.
         renderer.domElement.addEventListener('mousemove', onDocumentMouseMove, false);
         renderer.domElement.addEventListener('mousedown', onDocumentMouseDown, false);
@@ -234,15 +266,44 @@ app.directive('spring', function($parse, $log, $timeout) {
       };
 
 
+      //this functions figures out the total offset of the element you are searching
+      //it goes up the the parent chain, to determine the absolute position
+      function findPos(obj) {
+        var curleft = curtop = 0;
+        if (obj.offsetParent) {
+          do {
+              curleft += obj.offsetLeft;
+              curtop += obj.offsetTop;
+              } 
+          while (obj = obj.offsetParent);
+          return [curleft,curtop];
+        }
+      }
+
+      // might wanna implement this eventually.
+      
+      // function onWindowResize()
+      // {
+      //     camera.aspect = window.innerWidth / window.innerHeight;
+      //     camera.updateProjectionMatrix();
+
+      //     renderer.setSize( window.innerWidth, window.innerHeight );
+      // }
 
       //The below functions are for the movement of the balls. Have to adjust the mouse x and y to 
       //correspond to the current position of the mouse. 
       function onDocumentMouseMove(event) {
         event.preventDefault();
 
+        //use the findPos function to determine the absolute top and left offset
+        
+        var offsetArr = findPos(renderer.domElement);
+
         // have to use the render.domElement.offset, in order to have the 3D assets anywhere on the page. 
-        mouse.x = ((event.clientX - renderer.domElement.offsetLeft) / renderer.domElement.width) * 2 - 1;
-        mouse.y = -((event.clientY - renderer.domElement.offsetTop) / renderer.domElement.height) * 2 + 1;
+        mouse.x = ((event.clientX - offsetArr[0]) / renderer.domElement.width) * 2 - 1;
+        mouse.y = -((event.clientY - offsetArr[1]) / renderer.domElement.height) * 2 + 1;
+
+        //console.log(findPos(renderer.domElement))
 
         // raycaster is the way of determining the selection. It is based on the mouse position and the camera angle within
         // the scene.
@@ -311,6 +372,11 @@ app.directive('spring', function($parse, $log, $timeout) {
 
       function onDocumentMouseDown(event) {
         event.preventDefault();
+
+        if(brokenSpring) {
+          location.reload();
+        } 
+          
         // var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5).unproject(camera);
         // var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
         var intersects = raycaster.intersectObjects(objects);
@@ -326,10 +392,14 @@ app.directive('spring', function($parse, $log, $timeout) {
 
           springPhys.v = 0;
 
-          //offset.copy(intersects[0].point).sub(plane.position);
+          if (!clicked) {
+            var selectText = scene.getObjectByName("clickText");
+            scene.remove( selectText );
+            clicked = true;
+          }
           container.style.cursor = 'move';
-
         }
+
       }
 
       function onDocumentMouseUp(event) {
@@ -356,7 +426,7 @@ app.directive('spring', function($parse, $log, $timeout) {
       //from the spring physics, likely redundant with the animation. 
       // http://burakkanber.com/blog/physics-in-javascript-car-suspension-part-1-spring-mass-damper/
 
-      var frameRate = 1 / 150;
+      var frameRate = 1 / 130;
       var frameDelay = frameRate * 1000;
 
       //The below variables are from the physics tutorial 
@@ -370,7 +440,7 @@ app.directive('spring', function($parse, $log, $timeout) {
 
       /* springPhys position and velocity. */
       var springPhys = {
-        x: 0,
+        x: 50,
         v: -3,
         mass: 1
       };
@@ -394,14 +464,15 @@ app.directive('spring', function($parse, $log, $timeout) {
 
         //Physics part of this code is taken from the physics tutorial http://burakkanber.com/blog/physics-in-javascript-car-suspension-part-1-spring-mass-damper/
         // eliminated mention of the wall, as it was not necessary for this. 
-
+        var b = -0.3;
         // defines the force experienced by the spring. need spring length to equal equilibrium position.
         var F_spring = k * (springPhys.x - springLength);
 
         // defines the dampening force, it is always opposed to motion.
 
-        if (Math.abs(springPhys.v) < 100) {
-          var F_damper = 0;
+        if (Math.abs(springPhys.v) < 60) {
+          var b = -0.007
+          var F_damper = b * springPhys.v;
         } else {
           var F_damper = b * springPhys.v;
         }
@@ -417,8 +488,10 @@ app.directive('spring', function($parse, $log, $timeout) {
 
 
         //INVISIBLE Sphere on top of the end of the spring. 
-        //corrected so that it is right on tope of the animation
-        invisSphere.position.x = springPhys.x-20;
+        //corrected so that it is right on top of the animation
+        //need to figure out a better way to do this, difficult
+        //cause we are using a morph.
+        invisSphere.position.x = (springPhys.x - 26)*1.45;
 
         //convert this position into a specific morph
         var changeIn = springLength - springPhys.x;

@@ -4,40 +4,75 @@
   <head>
 
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    
+
+    <!-- Libraries -->
     <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
-<!-- 
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r70/three.min.js"></script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r70/three.js"></script>
- -->
-
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r70/three.min.js"></script>
+ <!-- Style Sheets -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="style.css" />
+
+ <!-- Program Scripts -->      
     <script src="script.js"></script>
     <script src="springChartDir.js"></script>
     <script src="springDir.js"></script>
   
-
-    
   </head>
 
   <body>
+
+
    
     <div ng-app="ballApp" ng-controller="ballController">
-    
-    
-    <h3 class="centred head3"> Simple oscillator: Ball on a spring </h3>
-    
-     <spring-chart ball-data="ballX.value"></spring-chart>
-     
-     <spring ball-data-spring="ballX.value"></spring>
 
-     <!-- {{ballX.value}} -->
-     
-    <!-- <slider floor="20" ceiling="80" ng-model="ballX.value"></slider> -->
-      
-     </div>
+      <div class="row">
+        <h1 class="col-lg-12 teal"> CHM311 Study: Chemveristy Testing</h1>
+      </div>
+
+        <div class "row"> 
+
+          <div class = "col-md-3 side-bar"> 
+            <div class="grey"> 
+              <p class="teal"> <strong> Welcome! </strong></p>
+              <p>  Thank you for continuing with our study. The interactive component in the middle of the page explores an analogy for introducing simple harmonic motion. Simply by observing the system, we can start to make inferences about simple harmonic motion. The graph will also give us additional information about the system, including details on its energy and distances. </p>
+              <p> Simple harmonic motion is useful for understanding concepts in quantum chemistry. When two atoms interact within a bond, they will oscillate in a similar, yet, non-identical fashion. Also, the energy of the diatomic system will change as the inter-nuclear separation changes.</p> 
+              <p> Please read the description the right of the page for more information. When you are done with the model, please click logout on the bottom right of this page and proceed with the post-test.</p> 
+            </div>
+          </div>
+
+          <div class = "col-md-6"> 
+              <div class "row">                     
+                  <h4 class="col-lg-12 head3"> Simple Harmonic Oscillator: Ball on a spring </h4>
+              </div>
+            <div class "row"> 
+              <spring-chart ball-data="ballX.value" class="col-lg-12"></spring-chart>
+            </div>
+            <div class "row"> 
+              <spring id="webgl-container" ball-data-spring="ballX.value" class="col-lg-12"></spring>
+            </div>
+          </div>
+
+          <div class = "col-md-3 side-bar"> 
+            <div class="grey"> 
+              <p class="teal"> <strong> Simple Harmonic Oscillator </strong> </p>
+              <p> An example of an every day simple harmonic oscillator is a spring. A spring at rest, meaning neither compressed or stretched is at its equilibrium position. A spring will resist being displaced from this position as it is at its very lowest energy. When pulled away or compressed from its equilibrium position, the spring increases in its potential energy. An observer can witness energy when the spring is released from its stretched or compressed state. When released from this state, the spring will then oscillate between compressed and stretched. What happens to this back and forth motion over time? Why?</p>
+              <p> Try stretching and compressing the spring to the left. Observe the relationship between the distance from the springs equilibrium position and changes to the potential energy. What else do you notice? Try stretching the spring as far to the right as possible. What happens? </p>  
+            </div>
+          </div>
+
+        </div>
+
+    </div>
+
+    <div class="row">
+      <div class="col-md-3 right-align" ><a class="teal" href=".">Logout</a></div>
+    </div>
+    
+
   </body>
 
 </html>
+
+
